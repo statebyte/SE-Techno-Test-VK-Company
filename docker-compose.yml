@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80"          # на локалхосте порт 3000, внутри контейнера nginx слушает 80
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=user
+      - DB_PASSWORD=pass
+      - DB_NAME=containers_db
+    depends_on:
+      - postgres
+
+  pinger:
+    build: ./pinger
+    container_name: pinger
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - BACKEND_URL=http://backend:8080
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:latest # 17
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=containers_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
